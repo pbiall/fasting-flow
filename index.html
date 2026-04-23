@@ -1490,53 +1490,88 @@
                     updateSyncStatus('synced');
                     alert('✅ Account created successfully!');
                 } 
-                else if (signupData.error?.includes('already registered') || 
-                         signupData.msg?.includes('already registered') ||
-                         signupData.code === 'user_already_exists') {
-                    // User exists, try signin
-                    console.log('👤 User already exists, trying signin...');
+                else if (!signupResponse.ok) {
+                    // Response was not OK - check the error
+                    console.log('📋 Response not OK, status:', signupResponse.status);
+                    console.log('📋 Error data:', signupData);
                     
-                    const signinResponse = await fetch(`${SUPABASE_URL}/auth/v1/token?grant_type=password`, {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                            'apikey': SUPABASE_KEY
-                        },
-                        body: JSON.stringify({ email, password })
-                    });
+                    // Check if user already exists
+                    const errorStr = JSON.stringify(signupData).toLowerCase();
+                    if (errorStr.includes('already') || errorStr.includes('registered') || signupData.code === 'user_already_exists') {
+                        console.log('👤 User already exists, trying signin...');
+                        
+                        const signinResponse = await fetch(`${SUPABASE_URL}/auth/v1/token?grant_type=password`, {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'apikey': SUPABASE_KEY
+                            },
+                            body: JSON.stringify({ email, password })
+                        });
 
-                    console.log('📋 Signin response status:', signinResponse.status);
-                    const signinData = await signinResponse.json();
-                    console.log('📋 Signin response:', signinData);
+                        console.log('📋 Signin response status:', signinResponse.status);
+                        const signinData = await signinResponse.json();
+                        console.log('📋 Signin response:', signinData);
 
-                    if (signinResponse.ok && signinData.session) {
-                        console.log('✅ Signin successful!');
-                        state.user = {
-                            id: signinData.user.id,
-                            email: signinData.user.email,
-                            token: signinData.session.access_token
-                        };
-                        localStorage.setItem('fastingUser', JSON.stringify(state.user));
-                        hideSignInTab();
-                        switchTab('current');
-                        updateSyncStatus('synced');
-                        alert('✅ Signed in successfully!');
-                    } else {
-                        console.error('❌ Signin failed:', signinData);
-                        alert('❌ Invalid email or password.\n\nError: ' + (signinData.error_description || signinData.error || 'Unknown error'));
+                        if (signinResponse.ok && signinData.session) {
+                            console.log('✅ Signin successful!');
+                            state.user = {
+                                id: signinData.user.id,
+                                email: signinData.user.email,
+                                token: signinData.session.access_token
+                            };
+                            localStorage.setItem('fastingUser', JSON.stringify(state.user));
+                            hideSignInTab();
+                            switchTab('current');
+                            updateSyncStatus('synced');
+                            alert('✅ Signed in successfully!');
+                        } else {
+                            console.error('❌ Signin failed:', signinData);
+                            const signinErr = signinData.error_description || signinData.error || 'Invalid email or password';
+                            
+                            const shouldUseFallback = confirm(
+                                '❌ Sign in failed!\n\n' +
+                                'Error: ' + signinErr + '\n\n' +
+                                'Would you like to use Local Mode instead?'
+                            );
+                            
+                            if (shouldUseFallback) {
+                                skipAuth();
+                            } else {
+                                updateSyncStatus('offline');
+                            }
+                        }
+                    }
+                    else if (errorStr.includes('disabled')) {
+                        console.error('❌ Auth disabled in Supabase');
+                        alert('❌ Email authentication is not enabled in Supabase.\n\nPlease:\n1. Go to Supabase Dashboard\n2. Authentication → Providers\n3. Enable the Email provider\n4. Try again');
                         updateSyncStatus('offline');
                     }
-                }
-                else if (signupData.error?.includes('disabled') || signupData.msg?.includes('disabled')) {
-                    console.error('❌ Auth disabled in Supabase');
-                    alert('❌ Email authentication is not enabled in Supabase.\n\nPlease:\n1. Go to Supabase Dashboard\n2. Authentication → Providers\n3. Enable the Email provider\n4. Try again');
-                    updateSyncStatus('offline');
-                }
-                else {
-                    console.error('❌ Unknown signup error:', signupData);
-                    const errorMsg = signupData.msg || signupData.error || signupData.error_description || 'Unknown error';
-                    alert('❌ Error: ' + errorMsg + '\n\nCheck console (F12) for details');
-                    updateSyncStatus('offline');
+                    else {
+                        // Unknown error
+                        console.error('❌ Signup error:', signupData);
+                        
+                        let errorMsg = 'Sign up failed';
+                        if (signupData.message) errorMsg = signupData.message;
+                        else if (signupData.error_description) errorMsg = signupData.error_description;
+                        else if (signupData.msg) errorMsg = signupData.msg;
+                        else if (signupData.error) errorMsg = signupData.error;
+                        
+                        console.log('📝 Parsed error:', errorMsg);
+                        
+                        const shouldUseFallback = confirm(
+                            '❌ Signup failed!\n\n' +
+                            'Error: ' + errorMsg + '\n\n' +
+                            'Would you like to use Local Mode instead?\n\n' +
+                            'Local Mode saves data on your device'
+                        );
+                        
+                        if (shouldUseFallback) {
+                            skipAuth();
+                        } else {
+                            updateSyncStatus('offline');
+                        }
+                    }
                 }
             } catch (error) {
                 console.error('❌ Network error:', error);
