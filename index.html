@@ -1,0 +1,1885 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Fasting Flow - Track your intermittent fasting with challenges and analytics">
+    <meta name="theme-color" content="#9CAF88">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Fasting Flow">
+    <link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 180 180'><rect fill='%239CAF88' width='180' height='180'/><text x='50%' y='50%' font-size='100' fill='white' text-anchor='middle' dominant-baseline='central'>🍃</text></svg>">
+    <link rel="manifest" href="manifest.json">
+    <title>Fasting Flow</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --sage: #FF8C00;
+            --sage-light: #2A2A2A;
+            --sage-dark: #FFB84D;
+            --cream: #1A1A1A;
+            --clay: #FF8C00;
+            --clay-light: #2A2A2A;
+            --text-dark: #FFFFFF;
+            --text-light: #B0B0B0;
+            --accent-green: #FF9D2E;
+            --accent-warm: #FFA500;
+        }
+
+        html, body {
+            height: 100%;
+            width: 100%;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica', sans-serif;
+            background: #0A0A0A;
+            color: var(--text-dark);
+            min-height: 100vh;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Header */
+        .header {
+            background: #1A1A1A;
+            padding: 20px 16px;
+            box-shadow: 0 2px 8px rgba(255, 140, 0, 0.2);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .header-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 16px;
+            max-width: 480px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        h1 {
+            font-size: 24px;
+            font-weight: 700;
+            color: #FF8C00;
+        }
+
+        .sync-badge {
+            display: inline-block;
+            font-size: 10px;
+            background: var(--sage-light);
+            color: var(--sage-dark);
+            padding: 4px 8px;
+            border-radius: 6px;
+            font-weight: 600;
+        }
+
+        .sync-badge.synced {
+            background: rgba(127, 179, 162, 0.2);
+            color: var(--accent-green);
+        }
+
+        .sync-badge.syncing {
+            background: #fff3cd;
+            color: #856404;
+        }
+
+        .sync-badge.offline {
+            background: #f8d7da;
+            color: #721c24;
+        }
+
+        /* Tabs */
+        .tabs {
+            display: flex;
+            gap: 0;
+            border-bottom: 1px solid #333;
+            max-width: 480px;
+            margin: 0 auto;
+            width: 100%;
+            padding: 0 16px;
+        }
+
+        .tab-btn {
+            flex: 1;
+            padding: 12px 0;
+            border: none;
+            background: none;
+            color: var(--text-light);
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            border-bottom: 3px solid transparent;
+            transition: all 0.2s;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .tab-btn.active {
+            color: var(--sage);
+            border-bottom-color: var(--sage);
+        }
+
+        /* Main Content */
+        .main {
+            flex: 1;
+            overflow-y: auto;
+            padding: 16px;
+        }
+
+        .container {
+            max-width: 480px;
+            margin: 0 auto;
+        }
+
+        /* Tab Content */
+        .tab-content {
+            display: none;
+            animation: fadeIn 0.3s ease;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        /* Auth Section */
+        .auth-section {
+            background: #1A1A1A;
+            padding: 20px;
+            border-radius: 16px;
+            margin-bottom: 20px;
+            display: none;
+            border: 1px solid #333;
+        }
+
+        .auth-section.show {
+            display: block;
+        }
+
+        .auth-section input {
+            width: 100%;
+            padding: 12px;
+            margin-bottom: 12px;
+            border: 1px solid #333;
+            border-radius: 8px;
+            font-size: 14px;
+            background: #2A2A2A;
+            color: #FFF;
+        }
+
+        .auth-section button {
+            width: 100%;
+            padding: 12px;
+            background: #FF8C00;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            margin-bottom: 8px;
+        }
+
+        .auth-section button:hover {
+            background: #FFB84D;
+        }
+
+        /* Custom Start Time */
+        .custom-time-section {
+            background: #1A1A1A;
+            padding: 16px;
+            border-radius: 12px;
+            border: 1px solid #333;
+            margin-bottom: 24px;
+        }
+
+        .custom-time-label {
+            font-size: 11px;
+            font-weight: 700;
+            color: #FF8C00;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 12px;
+            display: block;
+        }
+
+        .custom-time-inputs {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 12px;
+        }
+
+        .custom-time-inputs input {
+            flex: 1;
+            padding: 10px;
+            background: #2A2A2A;
+            border: 1px solid #333;
+            border-radius: 8px;
+            color: #FFF;
+            font-size: 13px;
+        }
+
+        .custom-time-inputs input:focus {
+            outline: none;
+            border-color: #FF8C00;
+        }
+
+        .custom-time-toggle {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 12px;
+        }
+
+        .toggle-btn {
+            flex: 1;
+            padding: 10px;
+            border: 1px solid #333;
+            border-radius: 8px;
+            background: #2A2A2A;
+            color: #B0B0B0;
+            font-size: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .toggle-btn.active {
+            background: #FF8C00;
+            color: white;
+            border-color: #FF8C00;
+        }
+
+        .custom-time-info {
+            font-size: 12px;
+            color: #B0B0B0;
+            background: rgba(255, 140, 0, 0.1);
+            padding: 8px;
+            border-radius: 6px;
+            border-left: 3px solid #FF8C00;
+        }
+
+        .section-label {
+            font-size: 11px;
+            font-weight: 700;
+            color: #FF8C00;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 12px;
+            display: block;
+        }
+
+        .protocol-buttons {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 8px;
+        }
+
+        .protocol-btn {
+            padding: 10px 12px;
+            border: 2px solid #333;
+            border-radius: 12px;
+            background: #2A2A2A;
+            color: #B0B0B0;
+            font-size: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .protocol-btn:hover {
+            background: #333;
+            border-color: #FF8C00;
+        }
+
+        .protocol-btn.active {
+            background: #FF8C00;
+            color: white;
+            border-color: #FF8C00;
+        }
+
+        .timer-section {
+            background: linear-gradient(135deg, #1A1A1A 0%, #2A2A2A 100%);
+            border-radius: 20px;
+            padding: 32px 24px;
+            text-align: center;
+            margin-bottom: 24px;
+            position: relative;
+            overflow: hidden;
+            border: 1px solid #333;
+        }
+
+        .timer-section::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            right: -50%;
+            width: 200px;
+            height: 200px;
+            background: radial-gradient(circle, rgba(127, 179, 162, 0.1) 0%, transparent 70%);
+            border-radius: 50%;
+            animation: float 6s ease-in-out infinite;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-20px); }
+        }
+
+        .streak-badge {
+            position: absolute;
+            top: 16px;
+            right: 16px;
+            background: linear-gradient(135deg, #FF6B6B, #FFD93D);
+            color: white;
+            padding: 8px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 700;
+            text-shadow: 0 1px 2px rgba(0,0,0,0.2);
+            z-index: 1;
+        }
+
+        .timer-label {
+            font-size: 12px;
+            color: #FF8C00;
+            text-transform: uppercase;
+            font-weight: 700;
+            letter-spacing: 1px;
+            margin-bottom: 12px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .timer-display {
+            font-size: 56px;
+            font-weight: 700;
+            color: #FF8C00;
+            margin: 16px 0;
+            font-variant-numeric: tabular-nums;
+            position: relative;
+            z-index: 1;
+        }
+
+        .timer-progress {
+            height: 6px;
+            background: rgba(255, 255, 255, 0.4);
+            border-radius: 3px;
+            margin: 16px 0;
+            overflow: hidden;
+            position: relative;
+            z-index: 1;
+        }
+
+        .progress-bar {
+            height: 100%;
+            background: linear-gradient(90deg, var(--accent-green), var(--accent-warm));
+            border-radius: 3px;
+            transition: width 0.5s ease;
+        }
+
+        .timer-info {
+            font-size: 13px;
+            color: #B0B0B0;
+            margin-top: 12px;
+            position: relative;
+            z-index: 1;
+            font-weight: 500;
+        }
+
+        .controls {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            margin-bottom: 24px;
+        }
+
+        .btn {
+            padding: 14px 20px;
+            border: none;
+            border-radius: 12px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .btn-primary {
+            background: #FF8C00;
+            color: white;
+            grid-column: 1 / -1;
+            padding: 16px;
+            font-size: 15px;
+        }
+
+        .btn-primary:hover {
+            background: #FFB84D;
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(255, 140, 0, 0.2);
+        }
+
+        .btn-primary:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .btn-secondary {
+            background: #2A2A2A;
+            color: #FF8C00;
+            border: 1px solid #333;
+        }
+
+        .btn-secondary:hover {
+            background: #333;
+            border-color: #FF8C00;
+        }
+
+        .btn.danger {
+            background: #2A2A2A;
+            color: #FF8C00;
+            border: 1px solid #333;
+        }
+
+        .btn.danger:hover {
+            background: #333;
+            border-color: #FF8C00;
+        }
+
+        .btn.hidden {
+            display: none;
+        }
+
+        /* Stats */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            margin-bottom: 24px;
+        }
+
+        .stat-card {
+            background: #1A1A1A;
+            padding: 16px;
+            border-radius: 12px;
+            border: 1px solid #333;
+            text-align: center;
+        }
+
+        .stat-label {
+            font-size: 11px;
+            color: #B0B0B0;
+            text-transform: uppercase;
+            font-weight: 700;
+            letter-spacing: 0.5px;
+            margin-bottom: 6px;
+        }
+
+        .stat-value {
+            font-size: 24px;
+            font-weight: 700;
+            color: #FF8C00;
+            font-variant-numeric: tabular-nums;
+        }
+
+        /* Challenges Tab */
+        .challenges-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+
+        .challenge-card {
+            background: #1A1A1A;
+            border-radius: 16px;
+            padding: 20px;
+            border: 2px solid #333;
+            transition: all 0.3s ease;
+        }
+
+        .challenge-card:hover {
+            border-color: #FF8C00;
+            box-shadow: 0 8px 20px rgba(255, 140, 0, 0.2);
+        }
+
+        .challenge-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: start;
+            margin-bottom: 12px;
+        }
+
+        .challenge-title {
+            font-size: 16px;
+            font-weight: 700;
+            color: #FF8C00;
+        }
+
+        .challenge-badge {
+            display: inline-block;
+            font-size: 11px;
+            background: #2A2A2A;
+            color: #B0B0B0;
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-weight: 700;
+            border: 1px solid #333;
+        }
+
+        .challenge-badge.active {
+            background: linear-gradient(135deg, #4CAF50, #8BC34A);
+            color: white;
+            border: none;
+        }
+
+        .challenge-badge.completed {
+            background: linear-gradient(135deg, #FFD93D, #FF6B6B);
+            color: white;
+            border: none;
+        }
+
+        .challenge-description {
+            font-size: 13px;
+            color: #B0B0B0;
+            margin-bottom: 12px;
+            line-height: 1.5;
+        }
+
+        .challenge-progress {
+            margin-bottom: 12px;
+        }
+
+        .challenge-progress-label {
+            display: flex;
+            justify-content: space-between;
+            font-size: 12px;
+            margin-bottom: 6px;
+        }
+
+        .progress-label-text {
+            color: #FFF;
+            font-weight: 600;
+        }
+
+        .progress-label-value {
+            color: #FF8C00;
+            font-weight: 700;
+        }
+
+        .progress-bar-container {
+            height: 8px;
+            background: #2A2A2A;
+            border-radius: 4px;
+            overflow: hidden;
+            border: 1px solid #333;
+        }
+
+        .progress-bar-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #FF8C00, #FFB84D);
+            border-radius: 4px;
+            transition: width 0.5s ease;
+        }
+
+        .challenge-reward {
+            font-size: 12px;
+            color: #B0B0B0;
+            padding: 8px;
+            background: #2A2A2A;
+            border-radius: 8px;
+            text-align: center;
+            border: 1px solid #333;
+        }
+
+        .challenge-reward.unlocked {
+            background: linear-gradient(135deg, rgba(255, 140, 0, 0.2), rgba(255, 180, 77, 0.2));
+            color: #FF8C00;
+            font-weight: 600;
+            border: 1px solid #FF8C00;
+        }
+
+        /* Analytics Tab */
+        .analytics-section {
+            margin-bottom: 24px;
+            background: #1A1A1A;
+            padding: 16px;
+            border-radius: 16px;
+            border: 1px solid #333;
+        }
+
+        .analytics-section-title {
+            font-size: 14px;
+            font-weight: 700;
+            color: #FF8C00;
+            margin-bottom: 16px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .chart-bar {
+            display: flex;
+            align-items: center;
+            margin-bottom: 12px;
+            gap: 8px;
+        }
+
+        .chart-label {
+            font-size: 11px;
+            color: #B0B0B0;
+            min-width: 35px;
+            text-align: right;
+            font-weight: 500;
+        }
+
+        .chart-barfill {
+            flex: 1;
+            height: 24px;
+            background: linear-gradient(90deg, #FF8C00, #FFB84D);
+            border-radius: 6px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .chart-value {
+            position: absolute;
+            right: 8px;
+            top: 50%;
+            transform: translateY(-50%);
+            font-size: 11px;
+            font-weight: 700;
+            color: #FFF;
+        }
+
+        .analytics-cards {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            margin-bottom: 16px;
+        }
+
+        .analytics-card {
+            background: #2A2A2A;
+            padding: 14px;
+            border-radius: 12px;
+            border: 1px solid #333;
+            text-align: center;
+        }
+
+        .analytics-card-label {
+            font-size: 11px;
+            color: #B0B0B0;
+            text-transform: uppercase;
+            font-weight: 700;
+            letter-spacing: 0.5px;
+            margin-bottom: 6px;
+        }
+
+        .analytics-card-value {
+            font-size: 22px;
+            font-weight: 700;
+            color: #FF8C00;
+            font-variant-numeric: tabular-nums;
+        }
+
+        /* History */
+        .history-list {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .history-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px;
+            background: #1A1A1A;
+            border-radius: 10px;
+            border: 1px solid #333;
+            font-size: 13px;
+        }
+
+        .history-time {
+            font-weight: 600;
+            color: #FF8C00;
+        }
+
+        .history-duration {
+            color: #B0B0B0;
+            font-size: 12px;
+        }
+
+        .delete-history {
+            background: none;
+            border: none;
+            color: #666;
+            cursor: pointer;
+            font-size: 16px;
+            padding: 0;
+            transition: color 0.2s;
+        }
+
+        .delete-history:hover {
+            color: #FF8C00;
+        }
+
+        .guidance-section {
+            background: linear-gradient(135deg, rgba(255, 140, 0, 0.05) 0%, rgba(255, 180, 77, 0.05) 100%);
+            padding: 16px;
+            border-radius: 12px;
+            border-left: 4px solid #FF8C00;
+            margin-bottom: 24px;
+        }
+
+        .guidance-title {
+            font-size: 12px;
+            font-weight: 700;
+            color: #FF8C00;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 8px;
+        }
+
+        .guidance-text {
+            font-size: 13px;
+            color: #B0B0B0;
+            line-height: 1.5;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 40px 20px;
+            color: var(--text-light);
+        }
+
+        .empty-state-icon {
+            font-size: 48px;
+            margin-bottom: 16px;
+        }
+
+        /* Sign In Modal */
+        .signin-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.95);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            padding: 20px;
+            display: none;
+        }
+
+        .signin-modal.show {
+            display: flex;
+        }
+
+        .signin-modal-content {
+            background: #1A1A1A;
+            border-radius: 20px;
+            padding: 40px 24px;
+            max-width: 400px;
+            width: 100%;
+            text-align: center;
+            border: 1px solid #333;
+        }
+
+        .signin-modal-icon {
+            font-size: 64px;
+            margin-bottom: 24px;
+        }
+
+        .signin-modal-title {
+            font-size: 28px;
+            font-weight: 700;
+            color: #FF8C00;
+            margin-bottom: 12px;
+        }
+
+        .signin-modal-subtitle {
+            color: #B0B0B0;
+            margin-bottom: 32px;
+            font-size: 14px;
+            line-height: 1.6;
+        }
+
+        .signin-modal-input {
+            width: 100%;
+            padding: 12px;
+            background: #2A2A2A;
+            border: 1px solid #333;
+            border-radius: 8px;
+            color: #FFF;
+            margin-bottom: 12px;
+            font-size: 14px;
+        }
+
+        .signin-modal-input:focus {
+            outline: none;
+            border-color: #FF8C00;
+        }
+
+        .signin-modal-buttons {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            margin-top: 24px;
+        }
+
+        .signin-modal-btn-primary {
+            width: 100%;
+            padding: 14px;
+            background: #FF8C00;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            font-size: 14px;
+            text-transform: uppercase;
+        }
+
+        .signin-modal-btn-primary:hover {
+            background: #FFB84D;
+        }
+
+        .signin-modal-btn-secondary {
+            width: 100%;
+            padding: 12px;
+            background: #2A2A2A;
+            color: #FF8C00;
+            border: 1px solid #333;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            font-size: 13px;
+        }
+
+        .signin-modal-btn-secondary:hover {
+            background: #333;
+            border-color: #FF8C00;
+        }
+
+        .signin-modal-features {
+            margin-top: 32px;
+            padding-top: 24px;
+            border-top: 1px solid #333;
+            text-align: left;
+        }
+
+        .signin-modal-features-title {
+            color: #FF8C00;
+            font-weight: 600;
+            margin-bottom: 12px;
+            font-size: 12px;
+            text-transform: uppercase;
+        }
+
+        .signin-modal-features-list {
+            list-style: none;
+            color: #B0B0B0;
+            font-size: 12px;
+            line-height: 1.8;
+        }
+
+        .signin-modal-features-list li {
+            margin-bottom: 6px;
+        }
+
+        @media (max-width: 380px) {
+            h1 {
+                font-size: 20px;
+            }
+
+            .timer-display {
+                font-size: 48px;
+            }
+
+            .protocol-buttons {
+                grid-template-columns: 1fr 1fr;
+            }
+
+            .tabs {
+                font-size: 11px;
+            }
+        }
+
+        .hidden {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <!-- Sign In Modal -->
+    <div class="signin-modal" id="signinModal">
+        <div class="signin-modal-content">
+            <div class="signin-modal-icon">🍃</div>
+            <h2 class="signin-modal-title">Fasting Flow</h2>
+            <p class="signin-modal-subtitle">
+                Track your intermittent fasting with streaks, challenges, and detailed analytics.
+            </p>
+
+            <input type="email" id="authEmail" class="signin-modal-input" placeholder="Email (optional)">
+            <input type="password" id="authPassword" class="signin-modal-input" placeholder="Password (optional)">
+
+            <div class="signin-modal-buttons">
+                <button class="signin-modal-btn-primary" onclick="handleAuth()">☁️ Sign Up / Sign In</button>
+                <button class="signin-modal-btn-secondary" onclick="skipAuth()">Continue Without Cloud</button>
+            </div>
+
+            <div class="signin-modal-features">
+                <div class="signin-modal-features-title">✨ Features</div>
+                <ul class="signin-modal-features-list">
+                    <li>✅ Live fasting timer with custom start times</li>
+                    <li>✅ 4 progressive challenges with badges</li>
+                    <li>✅ Detailed weekly, monthly, yearly analytics</li>
+                    <li>✅ Streak tracking (12+ hours = 1 day)</li>
+                    <li>✅ Works offline, syncs when online</li>
+                    <li>✅ Install as PWA on home screen</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <!-- Header -->
+    <div class="header">
+        <div class="header-top">
+            <h1>🍃 Fasting Flow</h1>
+            <div style="display: flex; gap: 12px; align-items: center;">
+                <div class="sync-badge" id="syncBadge">Initializing...</div>
+                <button id="signOutBtn" onclick="handleSignOut()" style="background: none; border: none; color: #FF8C00; cursor: pointer; font-weight: 600; font-size: 12px; display: none;">Sign Out</button>
+            </div>
+        </div>
+        <div class="tabs">
+            <button class="tab-btn active" id="currentTabBtn" onclick="switchTab('current')">Current</button>
+            <button class="tab-btn" id="challengesTabBtn" onclick="switchTab('challenges')">Challenges</button>
+            <button class="tab-btn" id="analyticsTabBtn" onclick="switchTab('analytics')">Analytics</button>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="main">
+        <div class="container">
+            <!-- ============ CURRENT FAST TAB ============ -->
+            <div class="tab-content active" id="current-tab">
+                <!-- Custom Start Time -->
+                <section class="custom-time-section">
+                    <label class="custom-time-label">⏰ Start Time</label>
+                    <div class="custom-time-toggle">
+                        <button class="toggle-btn active" onclick="toggleCustomTime(false)">Now</button>
+                        <button class="toggle-btn" onclick="toggleCustomTime(true)">Custom Time</button>
+                    </div>
+                    <div id="customTimeInputs" style="display: none;">
+                        <div class="custom-time-inputs">
+                            <input type="date" id="customDate" placeholder="Date">
+                            <input type="time" id="customTime" placeholder="Time">
+                        </div>
+                        <div class="custom-time-info" id="customTimeInfo">
+                            Select date and time to backdate your fast
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Protocol Selector -->
+                <section class="protocol-section">
+                    <label class="section-label">Fasting Protocol</label>
+                    <div class="protocol-buttons">
+                        <button class="protocol-btn active" data-protocol="12:12">12:12</button>
+                        <button class="protocol-btn" data-protocol="16:8">16:8</button>
+                        <button class="protocol-btn" data-protocol="18:6">18:6</button>
+                        <button class="protocol-btn" data-protocol="20:4">20:4</button>
+                        <button class="protocol-btn" data-protocol="24h">24h</button>
+                    </div>
+                </section>
+
+                <!-- Timer Display -->
+                <section class="timer-section">
+                    <div class="streak-badge" id="streakBadge">🔥 0 Day Streak</div>
+                    <div class="timer-label">Fasting Time Elapsed</div>
+                    <div class="timer-display" id="timerDisplay">00:00:00</div>
+                    <div class="timer-progress">
+                        <div class="progress-bar" id="progressBar" style="width: 0%"></div>
+                    </div>
+                    <div class="timer-info" id="timerInfo">Start your fast to begin tracking</div>
+                </section>
+
+                <!-- Controls -->
+                <div class="controls">
+                    <button class="btn btn-primary" id="startBtn">Start Fast</button>
+                    <button class="btn btn-primary" id="stopBtn" style="display: none;">End Fast</button>
+                    <button class="btn btn-secondary" id="resetBtn">Reset</button>
+                    <button class="btn danger" id="clearBtn">Clear All</button>
+                </div>
+
+                <!-- Stats -->
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-label">Longest Fast</div>
+                        <div class="stat-value" id="longestFast">0h</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-label">Total Sessions</div>
+                        <div class="stat-value" id="totalSessions">0</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-label">This Week</div>
+                        <div class="stat-value" id="weekCount">0</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-label">Avg Duration</div>
+                        <div class="stat-value" id="avgDuration">0h</div>
+                    </div>
+                </div>
+
+                <!-- Guidance -->
+                <div class="guidance-section" id="guidanceBox">
+                    <div class="guidance-title">💡 Fasting Tip</div>
+                    <div class="guidance-text" id="guidanceText">Stay hydrated and listen to your body. Fasting is a journey, not a race.</div>
+                </div>
+
+                <!-- Recent Sessions -->
+                <label class="section-label">Recent Sessions</label>
+                <div class="history-list" id="historyList">
+                    <div style="color: var(--text-light); font-size: 13px; text-align: center; padding: 20px;">
+                        No sessions yet. Start fasting to track your progress!
+                    </div>
+                </div>
+            </div>
+
+            <!-- ============ CHALLENGES TAB ============ -->
+            <div class="tab-content" id="challenges-tab">
+                <div class="challenges-grid" id="challengesGrid">
+                    <!-- Challenges will be rendered here -->
+                </div>
+            </div>
+
+            <!-- ============ ANALYTICS TAB ============ -->
+            <div class="tab-content" id="analytics-tab">
+                <div class="analytics-section">
+                    <div class="analytics-section-title">📅 Weekly</div>
+                    <div class="analytics-cards">
+                        <div class="analytics-card">
+                            <div class="analytics-card-label">This Week Hours</div>
+                            <div class="analytics-card-value" id="weekHours">0h</div>
+                        </div>
+                        <div class="analytics-card">
+                            <div class="analytics-card-label">Week Sessions</div>
+                            <div class="analytics-card-value" id="weekSessions">0</div>
+                        </div>
+                    </div>
+                    <div id="weekChart">
+                        <div style="color: var(--text-light); font-size: 12px; text-align: center; padding: 20px;">No data yet</div>
+                    </div>
+                </div>
+
+                <div class="analytics-section">
+                    <div class="analytics-section-title">📊 Monthly</div>
+                    <div class="analytics-cards">
+                        <div class="analytics-card">
+                            <div class="analytics-card-label">This Month Hours</div>
+                            <div class="analytics-card-value" id="monthHours">0h</div>
+                        </div>
+                        <div class="analytics-card">
+                            <div class="analytics-card-label">Month Sessions</div>
+                            <div class="analytics-card-value" id="monthSessions">0</div>
+                        </div>
+                    </div>
+                    <div id="monthChart">
+                        <div style="color: var(--text-light); font-size: 12px; text-align: center; padding: 20px;">No data yet</div>
+                    </div>
+                </div>
+
+                <div class="analytics-section">
+                    <div class="analytics-section-title">📈 Yearly</div>
+                    <div class="analytics-cards">
+                        <div class="analytics-card">
+                            <div class="analytics-card-label">This Year Hours</div>
+                            <div class="analytics-card-value" id="yearHours">0h</div>
+                        </div>
+                        <div class="analytics-card">
+                            <div class="analytics-card-label">Year Sessions</div>
+                            <div class="analytics-card-value" id="yearSessions">0</div>
+                        </div>
+                    </div>
+                    <div id="yearChart">
+                        <div style="color: var(--text-light); font-size: 12px; text-align: center; padding: 20px;">No data yet</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ============ CONSTANTS ============
+        const SUPABASE_URL = 'https://kjoufebzamnvykguhfzh.supabase.co';
+        const SUPABASE_KEY = 'sb_publishable_GfCtdnt0NS1uQoYBdrZQ7Q_VQmNhEpZ';
+
+        const protocols = {
+            '12:12': { minutes: 12 * 60 },
+            '16:8': { minutes: 16 * 60 },
+            '18:6': { minutes: 18 * 60 },
+            '20:4': { minutes: 20 * 60 },
+            '24h': { minutes: 24 * 60 }
+        };
+
+        const guidanceMessages = [
+            { text: 'Stay hydrated! Water, black coffee, and tea are your friends during fasting windows.' },
+            { text: 'Mental clarity often improves 2-3 hours into your fast as ketones increase.' },
+            { text: 'Light exercise during fasting can enhance fat burning. High-intensity training during eating window.' },
+            { text: 'Quality sleep supports your fasting protocol. Aim for 7-9 hours per night.' },
+            { text: 'Break your fast with easily digestible foods. Avoid overeating during eating windows.' },
+            { text: 'Consistency matters more than perfection. Even one fasting session helps your body adapt.' },
+            { text: 'Give your body 2-4 weeks to adapt. Benefits increase over time.' }
+        ];
+
+        const challenges = [
+            {
+                id: 'seven-day',
+                title: '7-Day Streak 🔥',
+                description: 'Complete 7 consecutive days of 12+ hour fasts',
+                target: 7,
+                type: 'streak',
+                reward: 'Bronze Badge',
+                icon: '🥉'
+            },
+            {
+                id: 'fifteen-day',
+                title: '15-Day Warrior 💪',
+                description: 'Reach a 15-day fasting streak',
+                target: 15,
+                type: 'streak',
+                reward: 'Silver Badge',
+                icon: '🥈'
+            },
+            {
+                id: 'monthly-champ',
+                title: 'Monthly Champion 👑',
+                description: 'Complete 20+ fasts in a calendar month',
+                target: 20,
+                type: 'monthly',
+                reward: 'Gold Badge',
+                icon: '🥇'
+            },
+            {
+                id: 'hundred-hours',
+                title: '100-Hour Club ⏱️',
+                description: 'Accumulate 100+ fasting hours total',
+                target: 100,
+                type: 'total-hours',
+                reward: 'Diamond Badge',
+                icon: '💎'
+            }
+        ];
+
+        // ============ STATE ============
+        const state = {
+            protocol: '12:12',
+            isFasting: false,
+            startTime: null,
+            sessions: [],
+            user: null,
+            isOnline: navigator.onLine,
+            syncStatus: 'offline',
+            streak: 0,
+            currentTab: 'current'
+        };
+
+        // ============ DOM ELEMENTS ============
+        const timerDisplay = document.getElementById('timerDisplay');
+        const timerInfo = document.getElementById('timerInfo');
+        const progressBar = document.getElementById('progressBar');
+        const startBtn = document.getElementById('startBtn');
+        const stopBtn = document.getElementById('stopBtn');
+        const resetBtn = document.getElementById('resetBtn');
+        const clearBtn = document.getElementById('clearBtn');
+        const protocolBtns = document.querySelectorAll('.protocol-btn');
+        const historyList = document.getElementById('historyList');
+        const guidanceText = document.getElementById('guidanceText');
+        const syncBadge = document.getElementById('syncBadge');
+        const authSection = document.getElementById('authSection');
+        const streakBadge = document.getElementById('streakBadge');
+        const challengesGrid = document.getElementById('challengesGrid');
+
+        // ============ CUSTOM START TIME ============
+        let useCustomTime = false;
+
+        function toggleCustomTime(useCustom) {
+            useCustomTime = useCustom;
+            const inputs = document.getElementById('customTimeInputs');
+            const buttons = document.querySelectorAll('.toggle-btn');
+            
+            buttons.forEach(btn => btn.classList.remove('active'));
+            event.target.classList.add('active');
+            
+            if (useCustom) {
+                inputs.style.display = 'block';
+                // Set default to yesterday at 8pm
+                const yesterday = new Date();
+                yesterday.setDate(yesterday.getDate() - 1);
+                document.getElementById('customDate').value = yesterday.toISOString().split('T')[0];
+                document.getElementById('customTime').value = '20:00';
+                updateCustomTimeInfo();
+            } else {
+                inputs.style.display = 'none';
+            }
+        }
+
+        function updateCustomTimeInfo() {
+            const dateInput = document.getElementById('customDate').value;
+            const timeInput = document.getElementById('customTime').value;
+            
+            if (dateInput && timeInput) {
+                const customDateTime = new Date(`${dateInput}T${timeInput}`);
+                const now = new Date();
+                const diffHours = ((now - customDateTime) / (1000 * 60 * 60)).toFixed(1);
+                
+                if (diffHours > 0) {
+                    document.getElementById('customTimeInfo').textContent = `Start time: ${customDateTime.toLocaleString()} (${diffHours} hours ago)`;
+                } else {
+                    document.getElementById('customTimeInfo').textContent = `Start time: ${customDateTime.toLocaleString()} (in the future)`;
+                }
+            }
+        }
+
+        function initCustomTimeListeners() {
+            setTimeout(() => {
+                const dateInput = document.getElementById('customDate');
+                const timeInput = document.getElementById('customTime');
+                
+                if (dateInput) {
+                    dateInput.addEventListener('change', updateCustomTimeInfo);
+                    dateInput.addEventListener('input', updateCustomTimeInfo);
+                }
+                if (timeInput) {
+                    timeInput.addEventListener('change', updateCustomTimeInfo);
+                    timeInput.addEventListener('input', updateCustomTimeInfo);
+                }
+            }, 100);
+        }
+
+        // ============ TAB SWITCHING ============
+        function switchTab(tab) {
+            state.currentTab = tab;
+            
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+            
+            document.getElementById(`${tab}-tab`).classList.add('active');
+            
+            // Manual check for button activation
+            if (tab === 'current') document.getElementById('currentTabBtn').classList.add('active');
+            else if (tab === 'challenges') document.getElementById('challengesTabBtn').classList.add('active');
+            else if (tab === 'analytics') document.getElementById('analyticsTabBtn').classList.add('active');
+
+            if (tab === 'analytics') {
+                updateAllAnalytics();
+            } else if (tab === 'challenges') {
+                renderChallenges();
+            }
+        }
+
+        // ============ SUPABASE HELPERS ============
+        async function handleAuth() {
+            const email = document.getElementById('authEmail').value;
+            const password = document.getElementById('authPassword').value;
+
+            if (!email || !password) {
+                alert('Please enter email and password');
+                return;
+            }
+
+            updateSyncStatus('syncing');
+
+            try {
+                const response = await fetch(`${SUPABASE_URL}/auth/v1/signup`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'apikey': SUPABASE_KEY
+                    },
+                    body: JSON.stringify({ email, password })
+                });
+
+                const data = await response.json();
+
+                if (response.ok && data.session) {
+                    state.user = {
+                        id: data.user.id,
+                        email: data.user.email,
+                        token: data.session.access_token
+                    };
+                    localStorage.setItem('fastingUser', JSON.stringify(state.user));
+                    hideSignInTab();
+                    switchTab('current');
+                    updateSyncStatus('synced');
+                } else if (data.msg?.includes('User already registered')) {
+                    const signInResponse = await fetch(`${SUPABASE_URL}/auth/v1/token?grant_type=password`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'apikey': SUPABASE_KEY
+                        },
+                        body: JSON.stringify({ email, password })
+                    });
+
+                    const signInData = await signInResponse.json();
+                    if (signInResponse.ok && signInData.session) {
+                        state.user = {
+                            id: signInData.user.id,
+                            email: signInData.user.email,
+                            token: signInData.session.access_token
+                        };
+                        localStorage.setItem('fastingUser', JSON.stringify(state.user));
+                        hideSignInTab();
+                        switchTab('current');
+                        updateSyncStatus('synced');
+                    }
+                }
+            } catch (error) {
+                console.error('Auth error:', error);
+                alert('Auth error. Check console.');
+            }
+        }
+
+        function skipAuth() {
+            // Skip cloud auth - use local only
+            localStorage.setItem('fastingUser', JSON.stringify({ local: true }));
+            state.user = { local: true };
+            hideSignInTab();
+            switchTab('current');
+            updateSyncStatus('ready');
+        }
+
+        function hideSignInTab() {
+            const modal = document.getElementById('signinModal');
+            const signOutBtn = document.getElementById('signOutBtn');
+            if (modal) {
+                modal.classList.remove('show');
+            }
+            if (signOutBtn) {
+                signOutBtn.style.display = 'block';
+            }
+        }
+
+        function showSignInTab() {
+            const modal = document.getElementById('signinModal');
+            const signOutBtn = document.getElementById('signOutBtn');
+            if (modal) {
+                modal.classList.add('show');
+            }
+            if (signOutBtn) {
+                signOutBtn.style.display = 'none';
+            }
+        }
+
+        function handleSignOut() {
+            if (confirm('Sign out and return to Sign In screen?')) {
+                localStorage.removeItem('fastingUser');
+                state.user = null;
+                showSignInTab();
+                switchTab('current');
+            }
+        }
+
+        // ============ UTILITIES ============
+        function formatTime(seconds) {
+            const hours = Math.floor(seconds / 3600);
+            const mins = Math.floor((seconds % 3600) / 60);
+            const secs = seconds % 60;
+            return `${String(hours).padStart(2, '0')}:${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
+        }
+
+        function formatDuration(minutes) {
+            if (minutes < 60) return `${minutes}m`;
+            const hours = (minutes / 60).toFixed(1);
+            return `${hours}h`;
+        }
+
+        function updateSyncStatus(status) {
+            state.syncStatus = status;
+            const statusMap = {
+                'offline': { text: '📴 Offline', class: 'offline' },
+                'syncing': { text: '⏳ Syncing...', class: 'syncing' },
+                'synced': { text: '✅ Synced', class: 'synced' },
+                'ready': { text: '✅ Ready', class: 'synced' }
+            };
+
+            const info = statusMap[status] || statusMap['ready'];
+            syncBadge.textContent = info.text;
+            syncBadge.className = `sync-badge ${info.class}`;
+        }
+
+        function updateGuidance() {
+            const msg = guidanceMessages[Math.floor(Math.random() * guidanceMessages.length)];
+            guidanceText.textContent = msg.text;
+        }
+
+        // ============ STREAK CALCULATION ============
+        function calculateStreak() {
+            let streak = 0;
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+
+            const sorted = [...state.sessions].sort((a, b) => b.endTime - a.endTime);
+
+            for (let i = 0; i < sorted.length; i++) {
+                const sessionDate = new Date(sorted[i].endTime);
+                sessionDate.setHours(0, 0, 0, 0);
+
+                const expectedDate = new Date(today);
+                expectedDate.setDate(expectedDate.getDate() - i);
+
+                // Only count if duration > 12 hours (strictly greater than, not equal to)
+                if (sessionDate.getTime() === expectedDate.getTime() && sorted[i].duration > 12 * 60) {
+                    streak++;
+                } else {
+                    break;
+                }
+            }
+
+            state.streak = streak;
+            streakBadge.textContent = `🔥 ${streak} Day Streak`;
+        }
+
+        // ============ TIMER ============
+        function updateTimer() {
+            if (!state.isFasting) return;
+
+            const elapsed = Math.floor((Date.now() - state.startTime) / 1000);
+            const protocol = protocols[state.protocol];
+            const targetSeconds = protocol.minutes * 60;
+
+            timerDisplay.textContent = formatTime(elapsed);
+
+            const progress = Math.min(100, (elapsed / targetSeconds) * 100);
+            progressBar.style.width = progress + '%';
+
+            const remaining = Math.max(0, targetSeconds - elapsed);
+            const thresholdMet = elapsed >= 12 * 3600;
+
+            if (remaining === 0) {
+                timerInfo.textContent = '🎉 Goal reached!';
+            } else if (thresholdMet) {
+                timerInfo.textContent = `✅ Fast qualified. End to log.`;
+            } else {
+                timerInfo.textContent = `${formatDuration(Math.ceil(remaining / 60))} until logged`;
+            }
+        }
+
+        // ============ STATS ============
+        function updateStats() {
+            if (state.sessions.length === 0) {
+                document.getElementById('longestFast').textContent = '0h';
+                document.getElementById('totalSessions').textContent = '0';
+                document.getElementById('weekCount').textContent = '0';
+                document.getElementById('avgDuration').textContent = '0h';
+                return;
+            }
+
+            const longest = Math.max(...state.sessions.map(s => s.duration));
+            document.getElementById('longestFast').textContent = formatDuration(longest);
+            document.getElementById('totalSessions').textContent = state.sessions.length;
+
+            const weekAgo = Date.now() - 7 * 24 * 60 * 60 * 1000;
+            // Only count fasts > 12 hours
+            const weekCount = state.sessions.filter(s => s.endTime > weekAgo && s.duration > 12 * 60).length;
+            document.getElementById('weekCount').textContent = weekCount;
+
+            const avgDuration = Math.round(state.sessions.reduce((sum, s) => sum + s.duration, 0) / state.sessions.length);
+            document.getElementById('avgDuration').textContent = formatDuration(avgDuration);
+        }
+
+        // ============ HISTORY ============
+        function updateHistory() {
+            if (state.sessions.length === 0) {
+                historyList.innerHTML = '<div style="color: var(--text-light); font-size: 13px; text-align: center; padding: 20px;">No sessions yet. Start fasting!</div>';
+                return;
+            }
+
+            historyList.innerHTML = state.sessions
+                .slice(-5)
+                .reverse()
+                .map((item, idx) => `
+                    <div class="history-item">
+                        <div>
+                            <div class="history-time">${new Date(item.endTime).toLocaleDateString()}</div>
+                            <div class="history-duration">${formatDuration(item.duration)}</div>
+                        </div>
+                        <button class="delete-history" onclick="deleteHistoryItem(${state.sessions.length - idx - 1})">✕</button>
+                    </div>
+                `).join('');
+        }
+
+        async function deleteHistoryItem(idx) {
+            state.sessions.splice(idx, 1);
+            localStorage.setItem('fastingSessions', JSON.stringify(state.sessions));
+            updateStats();
+            updateHistory();
+            calculateStreak();
+            renderChallenges();
+        }
+
+        // ============ CHALLENGES ============
+        function getChallengeProgress(challenge) {
+            if (challenge.type === 'streak') {
+                return { current: state.streak, max: challenge.target };
+            } else if (challenge.type === 'monthly') {
+                const now = new Date();
+                const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+                // Only count fasts > 12 hours
+                const count = state.sessions.filter(s => s.endTime >= monthStart && s.duration > 12 * 60).length;
+                return { current: count, max: challenge.target };
+            } else if (challenge.type === 'total-hours') {
+                const totalMinutes = state.sessions.reduce((sum, s) => sum + s.duration, 0);
+                const totalHours = Math.floor(totalMinutes / 60);
+                return { current: totalHours, max: challenge.target };
+            }
+        }
+
+        function renderChallenges() {
+            challengesGrid.innerHTML = challenges.map(challenge => {
+                const progress = getChallengeProgress(challenge);
+                const percentage = Math.min(100, (progress.current / progress.max) * 100);
+                const isCompleted = progress.current >= progress.max;
+
+                return `
+                    <div class="challenge-card">
+                        <div class="challenge-header">
+                            <div class="challenge-title">${challenge.title}</div>
+                            <div class="challenge-badge ${isCompleted ? 'completed' : state.streak > 0 ? 'active' : ''}">
+                                ${isCompleted ? '✅ Done' : progress.current > 0 ? 'In Progress' : 'Locked'}
+                            </div>
+                        </div>
+                        <div class="challenge-description">${challenge.description}</div>
+                        <div class="challenge-progress">
+                            <div class="challenge-progress-label">
+                                <span class="progress-label-text">${challenge.type === 'streak' ? 'Streak' : challenge.type === 'monthly' ? 'This Month' : 'Total'}</span>
+                                <span class="progress-label-value">${progress.current} / ${progress.max}</span>
+                            </div>
+                            <div class="progress-bar-container">
+                                <div class="progress-bar-fill" style="width: ${percentage}%"></div>
+                            </div>
+                        </div>
+                        <div class="challenge-reward ${isCompleted ? 'unlocked' : ''}">
+                            ${isCompleted ? `🎉 ${challenge.icon} ${challenge.reward} Unlocked!` : `Unlock: ${challenge.icon} ${challenge.reward}`}
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        // ============ ANALYTICS ============
+        function getDateRange(type) {
+            const now = new Date();
+            const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+
+            if (type === 'week') {
+                const weekAgo = new Date(today);
+                weekAgo.setDate(weekAgo.getDate() - 6);
+                return { start: weekAgo.getTime(), end: now.getTime() };
+            } else if (type === 'month') {
+                const monthAgo = new Date(today);
+                monthAgo.setDate(1);
+                return { start: monthAgo.getTime(), end: now.getTime() };
+            } else if (type === 'year') {
+                const yearAgo = new Date(today);
+                yearAgo.setMonth(0);
+                yearAgo.setDate(1);
+                return { start: yearAgo.getTime(), end: now.getTime() };
+            }
+        }
+
+        function calculateAnalytics(type) {
+            const range = getDateRange(type);
+            const sessions = state.sessions.filter(s => s.endTime >= range.start && s.endTime <= range.end);
+            const totalMinutes = sessions.reduce((sum, s) => sum + s.duration, 0);
+            const totalHours = (totalMinutes / 60).toFixed(1);
+
+            return { hours: totalHours, sessions: sessions.length, data: sessions };
+        }
+
+        function buildWeeklyChart() {
+            const analytics = calculateAnalytics('week');
+            document.getElementById('weekHours').textContent = analytics.hours + 'h';
+            document.getElementById('weekSessions').textContent = analytics.sessions;
+
+            const dayMap = {};
+            const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+            
+            for (let i = 6; i >= 0; i--) {
+                const d = new Date();
+                d.setDate(d.getDate() - i);
+                const key = d.toISOString().split('T')[0];
+                dayMap[key] = 0;
+            }
+
+            analytics.data.forEach(session => {
+                const key = new Date(session.endTime).toISOString().split('T')[0];
+                if (dayMap.hasOwnProperty(key)) {
+                    dayMap[key] += session.duration / 60;
+                }
+            });
+
+            const maxHours = Math.max(...Object.values(dayMap), 1);
+            const entries = Object.entries(dayMap);
+
+            let chartHTML = '';
+            entries.forEach(([date, hours]) => {
+                const dayName = days[new Date(date).getDay()];
+                const percentage = (hours / maxHours) * 100;
+                chartHTML += `
+                    <div class="chart-bar">
+                        <div class="chart-label">${dayName}</div>
+                        <div class="chart-barfill" style="width: ${percentage}%">
+                            <div class="chart-value">${hours.toFixed(1)}h</div>
+                        </div>
+                    </div>
+                `;
+            });
+
+            document.getElementById('weekChart').innerHTML = chartHTML || '<div style="color: var(--text-light); font-size: 12px; text-align: center; padding: 20px;">No data yet</div>';
+        }
+
+        function buildMonthlyChart() {
+            const analytics = calculateAnalytics('month');
+            document.getElementById('monthHours').textContent = analytics.hours + 'h';
+            document.getElementById('monthSessions').textContent = analytics.sessions;
+
+            const today = new Date();
+            const year = today.getFullYear();
+            const month = today.getMonth();
+            const lastDay = new Date(year, month + 1, 0).getDate();
+
+            const dayMap = {};
+            for (let i = 1; i <= lastDay; i++) {
+                const key = `${year}-${String(month + 1).padStart(2, '0')}-${String(i).padStart(2, '0')}`;
+                dayMap[key] = 0;
+            }
+
+            analytics.data.forEach(session => {
+                const key = new Date(session.endTime).toISOString().split('T')[0];
+                if (dayMap.hasOwnProperty(key)) {
+                    dayMap[key] += session.duration / 60;
+                }
+            });
+
+            const entries = Object.entries(dayMap);
+            const maxHours = Math.max(...Object.values(dayMap), 1);
+
+            let chartHTML = '';
+            entries.forEach(([date, hours], idx) => {
+                if (idx % 3 === 0 || idx === entries.length - 1) {
+                    const day = new Date(date).getDate();
+                    const percentage = (hours / maxHours) * 100;
+                    chartHTML += `
+                        <div class="chart-bar">
+                            <div class="chart-label">${day}</div>
+                            <div class="chart-barfill" style="width: ${percentage}%">
+                                <div class="chart-value">${hours.toFixed(1)}h</div>
+                            </div>
+                        </div>
+                    `;
+                }
+            });
+
+            document.getElementById('monthChart').innerHTML = chartHTML || '<div style="color: var(--text-light); font-size: 12px; text-align: center; padding: 20px;">No data yet</div>';
+        }
+
+        function buildYearlyChart() {
+            const analytics = calculateAnalytics('year');
+            document.getElementById('yearHours').textContent = analytics.hours + 'h';
+            document.getElementById('yearSessions').textContent = analytics.sessions;
+
+            const monthMap = {};
+            const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+            
+            for (let i = 0; i < 12; i++) {
+                monthMap[i] = 0;
+            }
+
+            analytics.data.forEach(session => {
+                const month = new Date(session.endTime).getMonth();
+                monthMap[month] += session.duration / 60;
+            });
+
+            const maxHours = Math.max(...Object.values(monthMap), 1);
+            let chartHTML = '';
+
+            Object.entries(monthMap).forEach(([monthIdx, hours]) => {
+                const percentage = (hours / maxHours) * 100;
+                chartHTML += `
+                    <div class="chart-bar">
+                        <div class="chart-label">${monthNames[monthIdx]}</div>
+                        <div class="chart-barfill" style="width: ${percentage}%">
+                            <div class="chart-value">${hours.toFixed(1)}h</div>
+                        </div>
+                    </div>
+                `;
+            });
+
+            document.getElementById('yearChart').innerHTML = chartHTML || '<div style="color: var(--text-light); font-size: 12px; text-align: center; padding: 20px;">No data yet</div>';
+        }
+
+        function updateAllAnalytics() {
+            buildWeeklyChart();
+            buildMonthlyChart();
+            buildYearlyChart();
+        }
+
+        // ============ EVENT HANDLERS ============
+        startBtn.addEventListener('click', () => {
+            let startTime = Date.now();
+            
+            if (useCustomTime) {
+                const dateInput = document.getElementById('customDate').value;
+                const timeInput = document.getElementById('customTime').value;
+                
+                if (!dateInput || !timeInput) {
+                    alert('Please select date and time');
+                    return;
+                }
+                
+                const customDateTime = new Date(`${dateInput}T${timeInput}`);
+                startTime = customDateTime.getTime();
+            }
+            
+            state.isFasting = true;
+            state.startTime = startTime;
+            startBtn.style.display = 'none';
+            stopBtn.style.display = 'block';
+            resetBtn.disabled = true;
+            protocolBtns.forEach(btn => btn.disabled = true);
+            localStorage.setItem('fastingSession', JSON.stringify({
+                startTime: state.startTime,
+                protocol: state.protocol
+            }));
+            updateGuidance();
+        });
+
+        stopBtn.addEventListener('click', async () => {
+            const durationMinutes = Math.round((Date.now() - state.startTime) / 60000);
+
+            if (durationMinutes <= 12 * 60) {
+                if (!confirm(`⏱️ Only ${formatDuration(durationMinutes)} completed.\n\nFasts must be > 12 hours to count toward streak.\n\nEnd anyway?`)) return;
+            }
+
+            state.sessions.push({
+                duration: durationMinutes,
+                endTime: Date.now()
+            });
+            localStorage.setItem('fastingSessions', JSON.stringify(state.sessions));
+
+            state.isFasting = false;
+            startBtn.style.display = 'block';
+            stopBtn.style.display = 'none';
+            resetBtn.disabled = false;
+            protocolBtns.forEach(btn => btn.disabled = false);
+            localStorage.removeItem('fastingSession');
+
+            timerDisplay.textContent = '00:00:00';
+            timerInfo.textContent = '✅ Fast ended. Great job!';
+            progressBar.style.width = '0%';
+
+            calculateStreak();
+            updateStats();
+            updateHistory();
+            renderChallenges();
+        });
+
+        resetBtn.addEventListener('click', () => {
+            timerDisplay.textContent = '00:00:00';
+            timerInfo.textContent = 'Ready to start a new fast';
+            progressBar.style.width = '0%';
+        });
+
+        clearBtn.addEventListener('click', () => {
+            if (confirm('⚠️ Clear all fasting history?')) {
+                state.sessions = [];
+                localStorage.removeItem('fastingSessions');
+                localStorage.removeItem('fastingSession');
+                state.streak = 0;
+                updateStats();
+                updateHistory();
+                calculateStreak();
+                renderChallenges();
+            }
+        });
+
+        protocolBtns.forEach(btn => {
+            btn.addEventListener('click', () => {
+                protocolBtns.forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                state.protocol = btn.dataset.protocol;
+            });
+        });
+
+        // ============ INITIALIZATION ============
+        function init() {
+            const savedUser = localStorage.getItem('fastingUser');
+            
+            if (savedUser) {
+                // User is logged in - hide modal
+                state.user = JSON.parse(savedUser);
+                hideSignInTab();
+            } else {
+                // No user logged in - show modal
+                showSignInTab();
+            }
+
+            const sessions = JSON.parse(localStorage.getItem('fastingSessions') || '[]');
+            state.sessions = sessions;
+
+            const savedSession = JSON.parse(localStorage.getItem('fastingSession'));
+            if (savedSession) {
+                state.startTime = savedSession.startTime;
+                state.protocol = savedSession.protocol;
+                state.isFasting = true;
+                startBtn.style.display = 'none';
+                stopBtn.style.display = 'block';
+                resetBtn.disabled = true;
+                protocolBtns.forEach(btn => {
+                    btn.classList.toggle('active', btn.dataset.protocol === savedSession.protocol);
+                    btn.disabled = true;
+                });
+            }
+
+            if (SUPABASE_URL.includes('YOUR_PROJECT')) {
+                updateSyncStatus('offline');
+            } else {
+                updateSyncStatus('ready');
+            }
+
+            calculateStreak();
+            updateStats();
+            updateHistory();
+            renderChallenges();
+            updateGuidance();
+            initCustomTimeListeners();
+
+            if ('serviceWorker' in navigator) {
+                navigator.serviceWorker.register('sw.js').catch(err => console.log('SW registration failed:', err));
+            }
+
+            setInterval(updateTimer, 1000);
+        }
+
+        init();
+    </script>
+</body>
+</html>
