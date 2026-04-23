@@ -1434,169 +1434,81 @@
         }
 
         // ============ SUPABASE HELPERS ============
-        async function handleAuth() {
+                async function handleAuth() {
             const email = document.getElementById('authEmail').value;
             const password = document.getElementById('authPassword').value;
 
             if (!email || !password) {
-                alert('❌ Please enter both email and password');
+                alert('❌ Enter email and password');
                 return;
             }
-
             if (email.length < 5 || !email.includes('@')) {
-                alert('❌ Please enter a valid email (e.g., user@example.com)');
+                alert('❌ Valid email required');
                 return;
             }
-
             if (password.length < 6) {
-                alert('❌ Password must be at least 6 characters');
+                alert('❌ 6+ character password');
                 return;
             }
 
-            console.log('🔄 Starting auth process...');
-            console.log('📝 Supabase URL:', SUPABASE_URL);
-            console.log('📝 Email:', email);
-
+            console.log('🔄 Auth with:', email);
             updateSyncStatus('syncing');
 
             try {
-                console.log('🔄 Making signup request...');
-
-                const signupResponse = await fetch(`${SUPABASE_URL}/auth/v1/signup`, {
+                console.log('1️⃣ Try signin...');
+                const signinResp = await fetch(`${SUPABASE_URL}/auth/v1/token?grant_type=password`, {
                     method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'apikey': SUPABASE_KEY
-                    },
+                    headers: { 'Content-Type': 'application/json', 'apikey': SUPABASE_KEY },
                     body: JSON.stringify({ email, password })
                 });
 
-                console.log('📋 Signup response status:', signupResponse.status);
-                
-                const signupData = await signupResponse.json();
-                console.log('📋 Signup response:', signupData);
+                const signinData = await signinResp.json();
+                console.log('Signin status:', signinResp.status, signinData);
 
-                if (signupResponse.ok && signupData.session) {
-                    // Signup success
-                    console.log('✅ Signup successful!');
-                    state.user = {
-                        id: signupData.user.id,
-                        email: signupData.user.email,
-                        token: signupData.session.access_token
-                    };
+                if (signinResp.ok && signinData.session) {
+                    state.user = { id: signinData.user.id, email: signinData.user.email, token: signinData.session.access_token };
                     localStorage.setItem('fastingUser', JSON.stringify(state.user));
                     hideSignInTab();
                     switchTab('current');
                     updateSyncStatus('synced');
-                    alert('✅ Account created successfully!');
-                } 
-                else if (!signupResponse.ok) {
-                    // Response was not OK - check the error
-                    console.log('📋 Response not OK, status:', signupResponse.status);
-                    console.log('📋 Full error object:', signupData);
-                    console.log('📋 Error keys:', Object.keys(signupData));
-                    
-                    // Debug: print all possible error fields
-                    for (let key in signupData) {
-                        console.log(`   ${key}: ${signupData[key]}`);
-                    }
-                    
-                    // Check if user already exists
-                    const errorStr = JSON.stringify(signupData).toLowerCase();
-                    if (errorStr.includes('already') || errorStr.includes('registered') || signupData.code === 'user_already_exists') {
-                        console.log('👤 User already exists, trying signin...');
-                        
-                        const signinResponse = await fetch(`${SUPABASE_URL}/auth/v1/token?grant_type=password`, {
-                            method: 'POST',
-                            headers: {
-                                'Content-Type': 'application/json',
-                                'apikey': SUPABASE_KEY
-                            },
-                            body: JSON.stringify({ email, password })
-                        });
-
-                        console.log('📋 Signin response status:', signinResponse.status);
-                        const signinData = await signinResponse.json();
-                        console.log('📋 Signin response:', signinData);
-
-                        if (signinResponse.ok && signinData.session) {
-                            console.log('✅ Signin successful!');
-                            state.user = {
-                                id: signinData.user.id,
-                                email: signinData.user.email,
-                                token: signinData.session.access_token
-                            };
-                            localStorage.setItem('fastingUser', JSON.stringify(state.user));
-                            hideSignInTab();
-                            switchTab('current');
-                            updateSyncStatus('synced');
-                            alert('✅ Signed in successfully!');
-                        } else {
-                            console.error('❌ Signin failed:', signinData);
-                            const signinErr = signinData.error_description || signinData.error || 'Invalid email or password';
-                            
-                            const shouldUseFallback = confirm(
-                                '❌ Sign in failed!\n\n' +
-                                'Error: ' + signinErr + '\n\n' +
-                                'Would you like to use Local Mode instead?'
-                            );
-                            
-                            if (shouldUseFallback) {
-                                skipAuth();
-                            } else {
-                                updateSyncStatus('offline');
-                            }
-                        }
-                    }
-                    else if (errorStr.includes('disabled')) {
-                        console.error('❌ Auth disabled in Supabase');
-                        alert('❌ Email authentication is not enabled in Supabase.\n\nPlease:\n1. Go to Supabase Dashboard\n2. Authentication → Providers\n3. Enable the Email provider\n4. Try again');
-                        updateSyncStatus('offline');
-                    }
-                    else {
-                        // Unknown error - try to extract message
-                        console.error('❌ Signup error with status ' + signupResponse.status);
-                        
-                        let errorMsg = 'Sign up failed';
-                        if (signupData.message) {
-                            errorMsg = signupData.message;
-                        } else if (signupData.error_description) {
-                            errorMsg = signupData.error_description;
-                        } else if (signupData.msg) {
-                            errorMsg = signupData.msg;
-                        } else if (signupData.error) {
-                            errorMsg = signupData.error;
-                        } else if (typeof signupData === 'object') {
-                            // Last resort - just show what we got
-                            errorMsg = JSON.stringify(signupData, null, 2);
-                        }
-                        
-                        console.log('📝 Final parsed error:', errorMsg);
-                        console.log('📝 Complete response was:', signupData);
-                        
-                        alert('❌ Signup Error:\n\n' + errorMsg + '\n\nCheck F12 console for full details');
-                        updateSyncStatus('offline');
-                    }
+                    alert('✅ Signed in!');
+                    return;
                 }
-            } catch (error) {
-                console.error('❌ Network error:', error);
-                
-                // Offer fallback to local mode
-                const shouldUseFallback = confirm(
-                    '❌ Cloud signup failed!\n\n' +
-                    'Error: ' + error.message + '\n\n' +
-                    'Would you like to use Local Mode instead?\n\n' +
-                    '✅ Local Mode saves data on your device\n' +
-                    '❌ No cloud sync\n\n' +
-                    'Click OK to continue with Local Mode'
-                );
-                
-                if (shouldUseFallback) {
-                    skipAuth();
-                } else {
-                    updateSyncStatus('offline');
+
+                console.log('2️⃣ Try signup...');
+                const signupResp = await fetch(`${SUPABASE_URL}/auth/v1/signup`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'apikey': SUPABASE_KEY },
+                    body: JSON.stringify({ email, password })
+                });
+
+                const signupData = await signupResp.json();
+                console.log('Signup status:', signupResp.status, signupData);
+
+                if (signupResp.ok && signupData.session) {
+                    state.user = { id: signupData.user.id, email: signupData.user.email, token: signupData.session.access_token };
+                    localStorage.setItem('fastingUser', JSON.stringify(state.user));
+                    hideSignInTab();
+                    switchTab('current');
+                    updateSyncStatus('synced');
+                    alert('✅ Account created!');
+                    return;
                 }
+
+                let err = signupData.error_description || signupData.error || signinData.error_description || signinData.error || 'Auth failed';
+                console.log('❌ Error:', err);
+                
+                if (confirm('❌ ' + err + '\n\nUse Local Mode?')) skipAuth();
+                else updateSyncStatus('offline');
+
+            } catch (e) {
+                console.error('❌', e.message);
+                if (confirm('❌ ' + e.message + '\n\nLocal Mode?')) skipAuth();
+                else updateSyncStatus('offline');
             }
+        }
+
+
         }
 
         function skipAuth() {
