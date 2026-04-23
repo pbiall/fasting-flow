@@ -712,6 +712,15 @@
             font-size: 13px;
         }
 
+        .history-item-info {
+            flex: 1;
+            cursor: pointer;
+        }
+
+        .history-item-info:hover {
+            color: #FF8C00;
+        }
+
         .history-time {
             font-weight: 600;
             color: #FF8C00;
@@ -720,6 +729,25 @@
         .history-duration {
             color: #B0B0B0;
             font-size: 12px;
+        }
+
+        .history-actions {
+            display: flex;
+            gap: 8px;
+        }
+
+        .edit-history {
+            background: none;
+            border: none;
+            color: #FF8C00;
+            cursor: pointer;
+            font-size: 16px;
+            padding: 0;
+            transition: color 0.2s;
+        }
+
+        .edit-history:hover {
+            color: #FFB84D;
         }
 
         .delete-history {
@@ -734,6 +762,93 @@
 
         .delete-history:hover {
             color: #FF8C00;
+        }
+
+        /* Edit Modal */
+        .edit-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.95);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            padding: 20px;
+        }
+
+        .edit-modal.show {
+            display: flex;
+        }
+
+        .edit-modal-content {
+            background: #1A1A1A;
+            border-radius: 16px;
+            padding: 24px;
+            max-width: 400px;
+            width: 100%;
+            border: 1px solid #333;
+        }
+
+        .edit-modal-title {
+            font-size: 18px;
+            font-weight: 700;
+            color: #FF8C00;
+            margin-bottom: 16px;
+        }
+
+        .edit-modal-input {
+            width: 100%;
+            padding: 12px;
+            background: #2A2A2A;
+            border: 1px solid #333;
+            border-radius: 8px;
+            color: #FFF;
+            margin-bottom: 12px;
+            font-size: 14px;
+        }
+
+        .edit-modal-input:focus {
+            outline: none;
+            border-color: #FF8C00;
+        }
+
+        .edit-modal-buttons {
+            display: flex;
+            gap: 12px;
+            margin-top: 20px;
+        }
+
+        .edit-modal-btn {
+            flex: 1;
+            padding: 12px;
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            font-size: 13px;
+            text-transform: uppercase;
+        }
+
+        .edit-modal-btn-save {
+            background: #FF8C00;
+            color: white;
+        }
+
+        .edit-modal-btn-save:hover {
+            background: #FFB84D;
+        }
+
+        .edit-modal-btn-cancel {
+            background: #2A2A2A;
+            color: #FF8C00;
+            border: 1px solid #333;
+        }
+
+        .edit-modal-btn-cancel:hover {
+            background: #333;
         }
 
         .guidance-section {
@@ -926,6 +1041,30 @@
     </style>
 </head>
 <body>
+    <!-- Edit Session Modal -->
+    <div class="edit-modal" id="editModal">
+        <div class="edit-modal-content">
+            <div class="edit-modal-title">Edit Fast Session</div>
+            
+            <label style="color: #B0B0B0; font-size: 12px; font-weight: 600; display: block; margin-bottom: 8px;">End Date</label>
+            <input type="date" id="editDate" class="edit-modal-input" placeholder="Date">
+            
+            <label style="color: #B0B0B0; font-size: 12px; font-weight: 600; display: block; margin-bottom: 8px;">End Time</label>
+            <input type="time" id="editTime" class="edit-modal-input" placeholder="Time">
+            
+            <div style="background: rgba(255, 140, 0, 0.1); padding: 12px; border-radius: 8px; border-left: 3px solid #FF8C00; margin-bottom: 16px;">
+                <div style="color: #B0B0B0; font-size: 12px;">
+                    Duration will be calculated automatically
+                </div>
+            </div>
+
+            <div class="edit-modal-buttons">
+                <button class="edit-modal-btn edit-modal-btn-save" onclick="saveEditedSession()">Save</button>
+                <button class="edit-modal-btn edit-modal-btn-cancel" onclick="closeEditModal()">Cancel</button>
+            </div>
+        </div>
+    </div>
+
     <!-- Sign In Modal -->
     <div class="signin-modal" id="signinModal">
         <div class="signin-modal-content">
@@ -1300,14 +1439,30 @@
             const password = document.getElementById('authPassword').value;
 
             if (!email || !password) {
-                alert('Please enter email and password');
+                alert('❌ Please enter both email and password');
                 return;
             }
+
+            if (email.length < 5 || !email.includes('@')) {
+                alert('❌ Please enter a valid email (e.g., user@example.com)');
+                return;
+            }
+
+            if (password.length < 6) {
+                alert('❌ Password must be at least 6 characters');
+                return;
+            }
+
+            console.log('🔄 Starting auth process...');
+            console.log('📝 Supabase URL:', SUPABASE_URL);
+            console.log('📝 Email:', email);
 
             updateSyncStatus('syncing');
 
             try {
-                const response = await fetch(`${SUPABASE_URL}/auth/v1/signup`, {
+                console.log('🔄 Making signup request...');
+
+                const signupResponse = await fetch(`${SUPABASE_URL}/auth/v1/signup`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -1316,20 +1471,32 @@
                     body: JSON.stringify({ email, password })
                 });
 
-                const data = await response.json();
+                console.log('📋 Signup response status:', signupResponse.status);
+                
+                const signupData = await signupResponse.json();
+                console.log('📋 Signup response:', signupData);
 
-                if (response.ok && data.session) {
+                if (signupResponse.ok && signupData.session) {
+                    // Signup success
+                    console.log('✅ Signup successful!');
                     state.user = {
-                        id: data.user.id,
-                        email: data.user.email,
-                        token: data.session.access_token
+                        id: signupData.user.id,
+                        email: signupData.user.email,
+                        token: signupData.session.access_token
                     };
                     localStorage.setItem('fastingUser', JSON.stringify(state.user));
                     hideSignInTab();
                     switchTab('current');
                     updateSyncStatus('synced');
-                } else if (data.msg?.includes('User already registered')) {
-                    const signInResponse = await fetch(`${SUPABASE_URL}/auth/v1/token?grant_type=password`, {
+                    alert('✅ Account created successfully!');
+                } 
+                else if (signupData.error?.includes('already registered') || 
+                         signupData.msg?.includes('already registered') ||
+                         signupData.code === 'user_already_exists') {
+                    // User exists, try signin
+                    console.log('👤 User already exists, trying signin...');
+                    
+                    const signinResponse = await fetch(`${SUPABASE_URL}/auth/v1/token?grant_type=password`, {
                         method: 'POST',
                         headers: {
                             'Content-Type': 'application/json',
@@ -1338,28 +1505,63 @@
                         body: JSON.stringify({ email, password })
                     });
 
-                    const signInData = await signInResponse.json();
-                    if (signInResponse.ok && signInData.session) {
+                    console.log('📋 Signin response status:', signinResponse.status);
+                    const signinData = await signinResponse.json();
+                    console.log('📋 Signin response:', signinData);
+
+                    if (signinResponse.ok && signinData.session) {
+                        console.log('✅ Signin successful!');
                         state.user = {
-                            id: signInData.user.id,
-                            email: signInData.user.email,
-                            token: signInData.session.access_token
+                            id: signinData.user.id,
+                            email: signinData.user.email,
+                            token: signinData.session.access_token
                         };
                         localStorage.setItem('fastingUser', JSON.stringify(state.user));
                         hideSignInTab();
                         switchTab('current');
                         updateSyncStatus('synced');
+                        alert('✅ Signed in successfully!');
+                    } else {
+                        console.error('❌ Signin failed:', signinData);
+                        alert('❌ Invalid email or password.\n\nError: ' + (signinData.error_description || signinData.error || 'Unknown error'));
+                        updateSyncStatus('offline');
                     }
                 }
+                else if (signupData.error?.includes('disabled') || signupData.msg?.includes('disabled')) {
+                    console.error('❌ Auth disabled in Supabase');
+                    alert('❌ Email authentication is not enabled in Supabase.\n\nPlease:\n1. Go to Supabase Dashboard\n2. Authentication → Providers\n3. Enable the Email provider\n4. Try again');
+                    updateSyncStatus('offline');
+                }
+                else {
+                    console.error('❌ Unknown signup error:', signupData);
+                    const errorMsg = signupData.msg || signupData.error || signupData.error_description || 'Unknown error';
+                    alert('❌ Error: ' + errorMsg + '\n\nCheck console (F12) for details');
+                    updateSyncStatus('offline');
+                }
             } catch (error) {
-                console.error('Auth error:', error);
-                alert('Auth error. Check console.');
+                console.error('❌ Network error:', error);
+                
+                // Offer fallback to local mode
+                const shouldUseFallback = confirm(
+                    '❌ Cloud signup failed!\n\n' +
+                    'Error: ' + error.message + '\n\n' +
+                    'Would you like to use Local Mode instead?\n\n' +
+                    '✅ Local Mode saves data on your device\n' +
+                    '❌ No cloud sync\n\n' +
+                    'Click OK to continue with Local Mode'
+                );
+                
+                if (shouldUseFallback) {
+                    skipAuth();
+                } else {
+                    updateSyncStatus('offline');
+                }
             }
         }
 
         function skipAuth() {
-            // Skip cloud auth - use local only
-            localStorage.setItem('fastingUser', JSON.stringify({ local: true }));
+            console.log('⏭️ Using local mode (no cloud sync)');
+            localStorage.setItem('fastingUser', JSON.stringify({ local: true, email: 'local-user' }));
             state.user = { local: true };
             hideSignInTab();
             switchTab('current');
@@ -1517,11 +1719,14 @@
                 .reverse()
                 .map((item, idx) => `
                     <div class="history-item">
-                        <div>
+                        <div class="history-item-info" onclick="editHistoryItem(${state.sessions.length - idx - 1})">
                             <div class="history-time">${new Date(item.endTime).toLocaleDateString()}</div>
                             <div class="history-duration">${formatDuration(item.duration)}</div>
                         </div>
-                        <button class="delete-history" onclick="deleteHistoryItem(${state.sessions.length - idx - 1})">✕</button>
+                        <div class="history-actions">
+                            <button class="edit-history" onclick="editHistoryItem(${state.sessions.length - idx - 1})">✎</button>
+                            <button class="delete-history" onclick="deleteHistoryItem(${state.sessions.length - idx - 1})">✕</button>
+                        </div>
                     </div>
                 `).join('');
         }
@@ -1533,6 +1738,66 @@
             updateHistory();
             calculateStreak();
             renderChallenges();
+        }
+
+        let editingSessionIdx = null;
+
+        function editHistoryItem(idx) {
+            editingSessionIdx = idx;
+            const session = state.sessions[idx];
+            const endDate = new Date(session.endTime);
+            
+            // Set date and time in inputs
+            document.getElementById('editDate').value = endDate.toISOString().split('T')[0];
+            document.getElementById('editTime').value = 
+                String(endDate.getHours()).padStart(2, '0') + ':' + 
+                String(endDate.getMinutes()).padStart(2, '0');
+            
+            // Show modal
+            document.getElementById('editModal').classList.add('show');
+        }
+
+        function closeEditModal() {
+            editingSessionIdx = null;
+            document.getElementById('editModal').classList.remove('show');
+        }
+
+        function saveEditedSession() {
+            if (editingSessionIdx === null) return;
+
+            const dateInput = document.getElementById('editDate').value;
+            const timeInput = document.getElementById('editTime').value;
+
+            if (!dateInput || !timeInput) {
+                alert('❌ Please select both date and time');
+                return;
+            }
+
+            const newEndTime = new Date(`${dateInput}T${timeInput}`);
+            const originalSession = state.sessions[editingSessionIdx];
+            const originalStartTime = new Date(originalSession.endTime - originalSession.duration * 60 * 1000);
+
+            // Calculate new duration
+            const newDurationMinutes = Math.round((newEndTime - originalStartTime) / 60000);
+
+            if (newDurationMinutes < 0) {
+                alert('❌ End time cannot be before start time');
+                return;
+            }
+
+            // Update session
+            state.sessions[editingSessionIdx] = {
+                duration: newDurationMinutes,
+                endTime: newEndTime.getTime()
+            };
+
+            localStorage.setItem('fastingSessions', JSON.stringify(state.sessions));
+            updateHistory();
+            updateStats();
+            calculateStreak();
+            renderChallenges();
+            closeEditModal();
+            alert('✅ Session updated!');
         }
 
         // ============ CHALLENGES ============
