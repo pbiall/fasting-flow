@@ -1493,7 +1493,13 @@
                 else if (!signupResponse.ok) {
                     // Response was not OK - check the error
                     console.log('📋 Response not OK, status:', signupResponse.status);
-                    console.log('📋 Error data:', signupData);
+                    console.log('📋 Full error object:', signupData);
+                    console.log('📋 Error keys:', Object.keys(signupData));
+                    
+                    // Debug: print all possible error fields
+                    for (let key in signupData) {
+                        console.log(`   ${key}: ${signupData[key]}`);
+                    }
                     
                     // Check if user already exists
                     const errorStr = JSON.stringify(signupData).toLowerCase();
@@ -1548,29 +1554,28 @@
                         updateSyncStatus('offline');
                     }
                     else {
-                        // Unknown error
-                        console.error('❌ Signup error:', signupData);
+                        // Unknown error - try to extract message
+                        console.error('❌ Signup error with status ' + signupResponse.status);
                         
                         let errorMsg = 'Sign up failed';
-                        if (signupData.message) errorMsg = signupData.message;
-                        else if (signupData.error_description) errorMsg = signupData.error_description;
-                        else if (signupData.msg) errorMsg = signupData.msg;
-                        else if (signupData.error) errorMsg = signupData.error;
-                        
-                        console.log('📝 Parsed error:', errorMsg);
-                        
-                        const shouldUseFallback = confirm(
-                            '❌ Signup failed!\n\n' +
-                            'Error: ' + errorMsg + '\n\n' +
-                            'Would you like to use Local Mode instead?\n\n' +
-                            'Local Mode saves data on your device'
-                        );
-                        
-                        if (shouldUseFallback) {
-                            skipAuth();
-                        } else {
-                            updateSyncStatus('offline');
+                        if (signupData.message) {
+                            errorMsg = signupData.message;
+                        } else if (signupData.error_description) {
+                            errorMsg = signupData.error_description;
+                        } else if (signupData.msg) {
+                            errorMsg = signupData.msg;
+                        } else if (signupData.error) {
+                            errorMsg = signupData.error;
+                        } else if (typeof signupData === 'object') {
+                            // Last resort - just show what we got
+                            errorMsg = JSON.stringify(signupData, null, 2);
                         }
+                        
+                        console.log('📝 Final parsed error:', errorMsg);
+                        console.log('📝 Complete response was:', signupData);
+                        
+                        alert('❌ Signup Error:\n\n' + errorMsg + '\n\nCheck F12 console for full details');
+                        updateSyncStatus('offline');
                     }
                 }
             } catch (error) {
